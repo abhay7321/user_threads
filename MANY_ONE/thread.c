@@ -172,3 +172,11 @@ int thread_create(thread *td, void *start_func, void *para){
     return 0;
 }
 
+
+int thread_exit(void *retVal){
+    timer_deactivate();
+    curr_tcb->result = retVal;
+    arr_exited_threads = (int*)realloc(arr_exited_threads, (++count_exited_threads)*sizeof(int));
+    arr_exited_threads[count_exited_threads-1] = curr_tcb->tid;
+    swtch(); 
+}
