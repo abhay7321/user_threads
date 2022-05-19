@@ -180,3 +180,37 @@ int thread_exit(void *retVal){
     arr_exited_threads[count_exited_threads-1] = curr_tcb->tid;
     swtch(); 
 }
+
+
+
+int thread_kill(thread td, int signal){
+    timer_deactivate();
+
+    if (signal < 1 || signal > 64){
+        printf("Invalid signal\n");
+        return EINVAL;
+    }
+
+    if(signal == SIGINT || signal == SIGCONT || signal == SIGSTOP|| signal == SIGKILL){
+        kill(getpid(),signal);
+    }
+    else{
+        if(curr_tcb->tid == td){
+            raise(signal);
+            timer_activate();
+            return 0;
+        }
+
+        thread_control_block *now = get_tcb_of_tid(&threads_list,td);
+
+        if (now == NULL){
+            printf("Target thread does not exist \n");
+            return ESRCH;
+        }
+
+        now->awaiting_signals = (int *)realloc(now->awaiting_signals, (++(now->count_of_awaiting_Signals) * sizeof(int)));
+        now->awaiting_signals[now->count_of_awaiting_Signals - 1] = signal;
+    }
+    timer_activate();
+    return 0;
+}
