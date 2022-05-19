@@ -17,3 +17,14 @@ typedef struct thread_control_block{
     int status_of_join;
     int joined_on;
 }thread_control_block;
+
+typedef unsigned long thread;
+
+void clean_thread_resources(thread_control_block *tcb);
+
+int start_routine(void *);
+int thread_create(thread *, void *(*f)(void *), void *, int join_status);
+int thread_join(thread, void **);
+int send_signal_all(int signum);
+int thread_kill(thread tcb, int signum);
+void thread_exit(void *retval);
