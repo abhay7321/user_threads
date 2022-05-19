@@ -126,3 +126,13 @@ int thread_create(thread *t, void *(*f)(void *), void *args, int join_status){
     *t = tcb->tid;
     return 0;
 }
+
+void thread_exit(void *retval){
+    // when the main/parent thread calls thread_exit then use exit syscall to terminate main thread instead of return.
+    if (getpid() == gettid())
+        exit(0);
+
+    thread_control_block *curr = get_info_tcb(threads_list, gettid());
+    curr->result = retval;
+    longjmp(curr->buf, 1);
+}
