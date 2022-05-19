@@ -56,7 +56,6 @@ void initialize_tcb(thread_control_block *t, int state, thread td, ucontext_t* c
 }
 
 
-
 // Task 1)Initilaizes main thread along with its context
 // Task 2)Initilaizes scheduler thread along with its context ,and uses makecontext to invoke sched function whenever setcontext() or swtchcontext() is done on scheduler ke thread ka context
 // Thats all that we have done in initialization
@@ -103,5 +102,32 @@ void intialize_lib(){
     initialize_tcb(sched_tcb, EXECUTING, 0, thread_context, NULL, NULL);
     
     timer_begin();
+}
+
+
+
+// TASK1)Execute the function that the thread was job of thread 
+// TASK2)ONCE function is executed job of thread is done , increment exited count and add the tid of thread to that exited array
+void start_routine(void *tcb){
+    populate_signal_set();
+
+    thread_control_block *tcb1 = (thread_control_block *)tcb;    
+    
+    //execute the function that was the job of thread
+    timer_activate();
+    tcb1->result = tcb1->func(tcb1->args);
+    timer_deactivate();
+
+    // when done with execution of thread , increase the count_exited_threads by 1.
+    // also add the tid of current thread to arr_exited_threads
+    arr_exited_threads = (int*)realloc(arr_exited_threads, (++count_exited_threads)*sizeof(int));
+    arr_exited_threads[count_exited_threads-1] = curr_tcb->tid;
+
+
+    timer_activate();
+
+    swtch();
+    //Once done with job of thread invoke swtch()
+    // swtch() will invoke scheduler so that other thread can be scheduled
 }
 
