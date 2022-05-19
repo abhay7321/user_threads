@@ -131,3 +131,44 @@ void start_routine(void *tcb){
     // swtch() will invoke scheduler so that other thread can be scheduled
 }
 
+
+//TASK1)IF its first thread , then give call to intialize_lib() to do initialization stuffs .
+//TASK2)Creates a new thread to run the function passed as argument and initializes that thread along with its context
+//TASK3)VERY IMPORTANTLY , it uses makecontext() function to run the start routine function when the above thread is scheduler for the first time .
+//TASK4)Pushes the thread in Linked_LIST
+//TASK5)Activates the timer .
+int thread_create(thread *td, void *start_func, void *para){
+    timer_deactivate();
+
+    // Library must be initialized only once .
+    // So instead of asking user to initialize the library ,we are initializing it ,
+    // while creating the first thread
+    static int isInit = 0;
+    if(!isInit){
+        intialize_lib();
+        isInit = 1;
+    }
+
+
+    thread_control_block *temp = (thread_control_block *)malloc(sizeof(thread_control_block));
+
+    ucontext_t *thread_context = (ucontext_t *)malloc(sizeof(ucontext_t));
+    getcontext(thread_context);
+
+    temp->stack_beginning = (void *)malloc(sizeof(char)*STACK_SIZE);
+
+    thread_context->uc_stack.ss_sp = temp->stack_beginning;
+    thread_context->uc_stack.ss_size = STACK_SIZE;
+    thread_context->uc_link = main_tcb->context;
+
+    initialize_tcb(temp, READY, next_thread++, thread_context, start_func, para);
+
+    makecontext(thread_context,(void*)&start_routine,1,(void *)(temp));
+
+    push_thread(&threads_list,temp);
+    *td = temp->tid;
+
+    timer_activate();
+    return 0;
+}
+
