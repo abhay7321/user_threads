@@ -127,6 +127,49 @@ int thread_create(thread *t, void *(*f)(void *), void *args, int join_status){
     return 0;
 }
 
+int thread_join(thread t, void **result){
+    thread_control_block *tcb = get_info_tcb(threads_list, t);
+    thread_control_block *curr = get_info_tcb(threads_list, gettid());
+
+    // If no such thread exists.
+    if (tcb == NULL){
+        printf("No thread with the id thread could be found\n");
+        return ESRCH;
+    }
+
+    if (tcb->status_of_join != JOINABLE){
+        if (tcb->status_of_join == DETACHED){
+            printf("Target thread is detached thread\n");
+            return EINVAL;
+        }
+        else if (tcb->status_of_join == JOINED){
+            printf("Target thread is already is already joined\n");
+            return EINVAL;
+        }
+    }
+
+    // if thread A is waiting for thread B and then B calls join i.e. wants to wait for A then deadlock happens.
+    if (curr != NULL && curr->joined_on == tcb->tid){
+        printf("A Deadlock is detected \n");
+        return EDEADLK;
+    }
+
+    tcb->joined_on = gettid();
+    tcb->status_of_join = JOINED;
+
+    // If target thread's execution isn't complete then wait for thread to complete its function execution
+    if ((tcb->futex_val == tcb->tid)){
+        syscall(SYS_futex, &tcb->futex_val, FUTEX_WAIT, tcb->tid, NULL, NULL, 0);
+    }
+    if (result != NULL){
+        *result = tcb->result;
+    }
+
+    clean_thread_resources(tcb);
+
+    return 0;
+}
+
 void thread_exit(void *retval){
     // when the main/parent thread calls thread_exit then use exit syscall to terminate main thread instead of return.
     if (getpid() == gettid())
