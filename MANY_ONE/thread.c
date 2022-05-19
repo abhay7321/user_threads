@@ -55,3 +55,53 @@ void initialize_tcb(thread_control_block *t, int state, thread td, ucontext_t* c
     t->stack_beginning = NULL;
 }
 
+
+
+// Task 1)Initilaizes main thread along with its context
+// Task 2)Initilaizes scheduler thread along with its context ,and uses makecontext to invoke sched function whenever setcontext() or swtchcontext() is done on scheduler ke thread ka context
+// Thats all that we have done in initialization
+void intialize_lib(){
+    populate_signal_set();
+
+    //Initializing thread Linked List
+    threads_list.tail = NULL;
+    threads_list.head = NULL;
+    
+    //Allocating space for tcb of main thread
+    main_tcb = (thread_control_block*)malloc(sizeof(thread_control_block));
+    
+    //Initializing context of main thread
+    ucontext_t* thread_context = (ucontext_t *)malloc(sizeof(ucontext_t));
+    getcontext(thread_context);
+
+    //Initializing tcb of main thread
+    initialize_tcb(main_tcb, EXECUTING, getpid(), thread_context, NULL, NULL);
+    
+    //As its the current executing thread , hence setting current thread as the main thread
+    curr_tcb = main_tcb;
+
+    //We are not using clone in many one as we had used it in one-one
+    //So giving thread_id is our task..........
+    next_thread = getpid()+1;
+    
+    //Pusing main thread in Linked_List
+    push_thread(&threads_list,main_tcb);
+
+    //Allocating space for tcb of scheduler thread    
+    sched_tcb = (thread_control_block*)malloc(sizeof(thread_control_block));
+    
+    //Initializing context of scheduler thread
+    thread_context = (ucontext_t *)malloc(sizeof(ucontext_t));    
+    getcontext(thread_context);
+
+    thread_context->uc_stack.ss_sp = (void *)malloc(sizeof(char)*STACK_SIZE);
+    thread_context->uc_stack.ss_size = STACK_SIZE;
+    thread_context->uc_link = main_tcb->context;
+    
+    makecontext(thread_context, sched, 0);
+
+    initialize_tcb(sched_tcb, EXECUTING, 0, thread_context, NULL, NULL);
+    
+    timer_begin();
+}
+
