@@ -136,3 +136,69 @@ void thread_exit(void *retval){
     curr->result = retval;
     longjmp(curr->buf, 1);
 }
+
+int send_signal_all(int signum){
+    thread_mutex_lock(&LL_lock);
+
+    node_LL *temp = threads_list->head;
+    int pid = getpid();
+    int ret_val;
+
+    while (temp){
+        if ((temp->tcb)->tid == gettid()){
+            temp = temp->next;
+            continue;
+        }
+
+        ret_val = syscall(TGKILL, pid, (temp->tcb)->tid, signum);
+
+        if (signum == SIGKILL || signum == SIGTERM){
+            thread_mutex_unlock(&LL_lock);
+            LL_deletenode(threads_list, temp);
+            thread_mutex_lock(&LL_lock);
+        }
+        temp = temp->next;
+    }
+
+    thread_mutex_unlock(&LL_lock);
+    return 0;
+}
+
+// For SIGCONT, SIGSTOP, SIGKILL, SIGTERM signals => send signal to all the threads ()
+// and for other signals send the signal to target thread.
+int thread_kill(thread t, int signum){
+    if (signum < 1 || signum > 64){
+        printf("Invalid signal\n");
+        return EINVAL;
+    }
+
+    thread_control_block *tcb = get_info_tcb(threads_list, t);
+
+    if (tcb == NULL){
+        printf("Target thread does not exist \n");
+        return ESRCH;
+    }
+
+    int ret_val;
+
+    if (signum == SIGTERM || signum == SIGKILL || signum == SIGCONT || signum == SIGSTOP){
+        send_signal_all(signum);
+        int pid = getpid();
+
+        ret_val = syscall(TGKILL, pid, gettid(), signum);
+
+        if (ret_val == -1)
+            return errno;
+
+        return 0;
+    }
+
+    int pid = getpid();
+    ret_val = syscall(TGKILL, pid, gettid(), signum);
+
+    if (ret_val == -1)
+        return errno;
+
+    return 0;
+}
+
