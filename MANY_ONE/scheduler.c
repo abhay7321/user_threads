@@ -32,3 +32,13 @@ void timer_deactivate(){
     signal(SIGVTALRM,SIG_IGN);
     return;
 }
+
+void populate_signal_set(){
+    sigfillset(&ignore_signals_list);
+    sigdelset(&ignore_signals_list,SIGKILL);
+    sigdelset(&ignore_signals_list,SIGSTOP);
+    sigdelset(&ignore_signals_list,SIGCONT);
+    sigdelset(&ignore_signals_list,SIGTERM);
+    sigdelset(&ignore_signals_list,SIGVTALRM);
+    sigprocmask(SIG_BLOCK,&ignore_signals_list,NULL);
+}
