@@ -173,6 +173,32 @@ int thread_create(thread *td, void *start_func, void *para){
 }
 
 
+int thread_join(thread td, void **res){
+    timer_deactivate();
+
+    thread_control_block* temp = get_tcb_of_tid(&threads_list, td);
+    if(temp == NULL){
+        if(res) *res = (void *)ESRCH;
+        timer_activate();
+        return ESRCH;
+    }
+
+    if(temp->exited){
+        if(res) *res = (void *)0;
+        timer_activate();
+        return 0;
+    }
+
+    temp->arr_waiting = (int*)realloc(temp->arr_waiting, (++(temp->count_of_waiters))*sizeof(int));
+    temp->arr_waiting[temp->count_of_waiters-1] = curr_tcb->tid;
+    curr_tcb->state_of_thread = WAITING;
+    swtch();
+
+    if(res) *res = (void *)0;
+    return 0;
+}
+
+
 int thread_exit(void *retVal){
     timer_deactivate();
     curr_tcb->result = retVal;
@@ -180,7 +206,6 @@ int thread_exit(void *retVal){
     arr_exited_threads[count_exited_threads-1] = curr_tcb->tid;
     swtch(); 
 }
-
 
 
 int thread_kill(thread td, int signal){
