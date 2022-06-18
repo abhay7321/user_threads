@@ -1,9 +1,6 @@
 <div align="center">
 	<h1>tlib</h1>
    <h4>A multithreading library for Unix-like POSIX compliant systems</h4> 
-   <img src="https://img.shields.io/badge/version-1.1-green">
-   <img src="https://img.shields.io/badge/license-MIT-important">
-   <img src="https://img.shields.io/github/issues/AnupNair08/tlib">
 </div>
 <div align="center">
    <img align="center" src="assets/logo.png" >
