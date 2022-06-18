@@ -1,9 +1,9 @@
 <div align="center">
-	<h1>tlib</h1>
+	<h1>multi-lib</h1>
    <h4>A multithreading library for Unix-like POSIX compliant systems</h4> 
 </div>
 <div align="center">
-   <img align="center" src="assets/images.png" >
+   <img align="center" width=20% src="assets/logonew.png" >
 </div>
 
 ## Contents
@@ -14,11 +14,12 @@
 - [Available APIs](#available-apis)
 - [Usage](#usage)
 - [Running Tests](#running-tests)
+- [Implementation Details](#implementation-details)
 - [References](#references)
 
 ### About
 
-`tlib` is a multithreading library that lets programs control multiple flows of work that run in an interleaved manner and supports user level threads in either a `One-One` mapping model or a `Many-One` mapping model. `tlib` is available for Unix-like POSIX conformant operating systems.
+`multi-lib` is a multithreading library that lets programs control multiple flows of work that run in an interleaved manner and supports user level threads in either a `One-One` mapping model or a `Many-One` mapping model. `multi-lib` is available for Unix-like POSIX conformant operating systems.
 
 ### Building
 
@@ -26,7 +27,7 @@
    # Run the root directory of the project
    make
    # To compile the binaries run
-   make tlib
+   make multi-lib
 
    # To compile the test suite
    make alltest
@@ -40,7 +41,7 @@
 
 ### Mapping models
 
-A mapping model refers to the way in which a thread created by the user maps to the kernel level thread. There are three main types of which the two implemented in `tlib` are :
+A mapping model refers to the way in which a thread created by the user maps to the kernel level thread. There are three main types of which the two implemented in `multi-lib` are :
 
 1. <b>One-one model</b>
 
@@ -90,7 +91,7 @@ A mapping model refers to the way in which a thread created by the user maps to 
 
 ## Available APIs
 
-- `tlib` provides two mapping models and the desired model can be chosen without changing any API calls. The implementation remains abstract to the user programs.
+- `multi-lib` provides two mapping models and the desired model can be chosen without changing any API calls. The implementation remains abstract to the user programs.
 - Each of the two models provides the following set of API calls:
 
    1. <b>Thread APIs</b>
@@ -108,37 +109,31 @@ A mapping model refers to the way in which a thread created by the user maps to 
 
       1. <b>Spin Lock</b>
 
-         | Function         | Description                         |
-         | ---------------- | ----------------------------------- |
-         | `spin_init()`    | Initialize a spinlock object        |
-         | `spin_acquire()` | Acquire a spinlock                  |
-         | `spin_release()` | Release a spinlock                  |
-         | `spin_trylock()` | Check if a spinlock can be acquired |
+         | Function         	| Description                         |
+         | ---------------------| ----------------------------------- |
+         | `spinlock_init()`    | Initialize a spinlock object    |
+         | `thread_lock()` 	| Acquire a spinlock                   |
+         | `thread_unlock()` 	| Release a spinlock                 |
 
       2. <b>Mutex Lock</b>
 
-         | Function          | Description                      |
-         | ----------------- | -------------------------------- |
-         | `mutex_init()`    | Initialize a mutex object        |
-         | `mutex_acquire()` | Acquire a mutex                  |
-         | `mutex_release()` | Release a mutex                  |
-         | `mutex_trylock()` | Check if a mutex can be acquired |
+         | Function          	   | Description                      |
+         | ------------------------| -------------------------------- |
+         | `mutexlock_init()`      | Initialize a mutex object        |
+         | `thread_mutex_lock()`   | Acquire a mutex                  |
+         | `thread_mutex_unlock()` | Release a mutex                  |
 
 ## Usage
 
-To use tlib in your programs, do the following:
+To use multi-lib in your programs, do the following:
 
+
+FOR using one-one mapping
 ```c
-// Use one of the macros to use the desired mapping
-#define ONE_ONE
-// #define MANY_ONE
-#include <stdio.h>
 
-#ifdef ONE_ONE
-   #include "src/OneOne/thread.h"
-#else
-   #include "src/ManyOne/thread.h"
-#endif
+#include <stdio.h>
+#include "one-one/thread.h"
+
 
 int global_var = 0;
 void func1(){
@@ -155,8 +150,40 @@ void func2(){
 
 int main(){
    thread t1,t2;
-   thread_create(&t1, NULL, func1, NULL);
-   thread_create(&t2, NULL, func2, NULL);
+   thread_create(&t1, func1, NULL , JOINABLE);
+   thread_create(&t2, func2, NULL , JOINABLE);
+   thread_join(t1,NULL);
+   thread_join(t2,NULL);
+   return 0;
+}
+
+```
+
+
+FOR using many-one mapping
+```c
+
+#include <stdio.h>
+#include "many-one/thread.h"
+
+
+int global_var = 0;
+void func1(){
+   printf("In thread routine 1");
+   global_var++;
+   return;
+}
+
+void func2(){
+   printf("In thread routine 2");
+   global_var++;
+   return;
+}
+
+int main(){
+   thread t1,t2;
+   thread_create(&t1, func1, NULL );
+   thread_create(&t2, func2, NULL );
    thread_join(t1,NULL);
    thread_join(t2,NULL);
    return 0;
@@ -166,29 +193,17 @@ int main(){
 
 ## Running Tests
 
-The library comes with an extensive test suite for checking the implementation and testing the performance of the library. Each implementation has a set of unit tests that check the correctness of the APIs. There is a test for checking the synchronization primitves and a classic program of readers writers to check the working of synchronization primitives namely mutex and spinlock. 
-The test suite also includes a robust testing program that checks for the error handling and incorrect input cases. Finally there is a benchmark program which is a matrix multiplication program in the single and multi-threaded environments to compare the performance of using a threading library.
-
-To run the tests:
-   ```sh
-
-   #Run the following in the root directory of the project
-
-   # Compile and auto run
-   make run
-
-   # Compile all binaries
-   make alltest
-   # Start the test suite
-   ./run.sh
+* The library comes with an extensive test suite for checking the implementation and testing the performance of the library. 
+* Each implementation has a set of unit tests that check the correctness of the APIs. 
+* There is a test for checking the synchronization primitves and a classic program of readers writers to check the working of synchronization primitives namely mutex and spinlock. 
+* The test suite also includes a robust testing program that checks for the error handling and incorrect input cases. 
+* Finally there is a benchmark program which is a matrix multiplication program in the single and multi-threaded environments to compare the performance of using a threading library.
 
 
-   # Check for memory leaks
-   make check-leak
+## Implementation Details
+* To know the implementation details of one-one threading model, please check out it's [README](one-one/README.md)
+* To know the implementation details of many-one threading model, please check out it's [README](many-one/README.md)
 
-   ```
-
-The shell script will test all the functionalities mentioned in the test suite above. In addition, the memory leak checker uses valgrind to look at potential memory leaks in the test code.
 
 ## References
 
