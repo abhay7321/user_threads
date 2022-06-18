@@ -107,17 +107,6 @@ A mapping model refers to the way in which a thread created by the user maps to 
          | `thread_kill()`   | Send a signal to a specific thread         |
          | `thread_exit()`   | Exit the thread routine                    |
 
-      2. <b>Thread Attribute handling</b>
-
-         | Function                 | Description                                         |
-         | ------------------------ | --------------------------------------------------- |
-         | `thread_attr_init()`     | Initialize an attribute object                      |
-         | `thread_attr_destroy()`  | Destroy an attribute object                         |
-         | `thread_attr_setStack()` | Set a user defined stack size                       |
-         | `thread_attr_getStack()` | Get the size of the current thread stack            |
-         | `thread_attr_setGuard()` | Set a user defined guard page size                  |
-         | `thread_attr_getGuard()` | Get the size of the current thread stack guard page |
-
    2. <b>Synchronization Primitves APIs</b>
 
       1. <b>Spin Lock</b>
